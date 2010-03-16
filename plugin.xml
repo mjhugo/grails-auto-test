@@ -1,0 +1,19 @@
+<plugin name='auto-test' version='0.1' grailsVersion='1.2.1 &gt; *'>
+  <author>Bjoern Wilmsmann</author>
+  <authorEmail>bjoern@metasieve.com</authorEmail>
+  <title>Auto test plugin</title>
+  <description>\
+Auto test plugin.
+</description>
+  <documentation>http://grails.org/plugin/auto-test</documentation>
+  <resources>
+    <resource>DataSource</resource>
+    <resource>UrlMappings</resource>
+  </resources>
+  <dependencies>
+    <resolvers>
+      <resolver type='grailsPlugins' name='grailsPlugins' />
+    </resolvers>
+  </dependencies>
+  <behavior />
+</plugin>
