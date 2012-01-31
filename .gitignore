@@ -6,3 +6,6 @@ test/project/bookstore/target/
 test/project/bookstore/web-app/WEB-INF/tld/c.tld
 test/project/bookstore/web-app/WEB-INF/tld/fmt.tld
 .DS_Store
+target/
+grails-auto-test-*.zip
+plugin.xml
