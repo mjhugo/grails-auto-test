@@ -1,166 +1,71 @@
-import org.codehaus.groovy.grails.plugins.PluginManagerHolder
+import grails.build.logging.GrailsConsole
+import groovy.transform.Synchronized
+import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
+import org.apache.commons.io.monitor.FileAlterationMonitor
+import org.apache.commons.io.monitor.FileAlterationObserver
+import org.codehaus.groovy.grails.cli.GrailsScriptRunner
+import org.codehaus.groovy.grails.cli.interactive.InteractiveMode
 
-scriptEnv = 'test'
-
-includeTargets << grailsScript("_GrailsArgParsing")
-includeTargets << grailsScript("_GrailsClean")
-includeTargets << grailsScript("_GrailsCompile")
-includeTargets << grailsScript("_GrailsInit")
-includeTargets << grailsScript("_GrailsPackage")
+includeTargets << grailsScript("_GrailsSettings")
 includeTargets << grailsScript("_GrailsTest")
+includeTargets << grailsScript("_GrailsCompile")
 
-TEST_PHASE_AND_TYPE_SEPARATOR = ':'
+target(default: "autotest") {
 
-recompileFrequency = System.getProperty("recompile.frequency")
-recompileFrequency = recompileFrequency ? recompileFrequency.toInteger() : 3
+    File baseProjectDirectory = new File(basedir)
+    long interval = 2000
+    FileListener listener = new FileListener()
 
-target(main: "Auto test") {
-	depends(checkVersion,
-			configureProxy,
-			parseArguments,
-			cleanTestReports,
-			packageApp)
+    FileAlterationObserver observer = new FileAlterationObserver(baseProjectDirectory);
+    observer.addListener(listener)
+    observer.initialize()
 
-    // The test targeting patterns 
-    def testTargeters = []
-    
-    // The params that target a phase and/or type
-    def phaseAndTypeTargeters = []
-    
-    // Separate the type/phase targeters from the test targeters
-    argsMap["params"].each { 
-        def destination = it.contains(TEST_PHASE_AND_TYPE_SEPARATOR) ? phaseAndTypeTargeters : testTargeters
-        destination << it
-    }
+    GrailsConsole.getInstance().updateStatus "listening for changes to directory ${baseProjectDirectory}"
 
-    // If we are targeting tests, set testNames (from _GrailsTest)
-    if (testTargeters) testNames = testTargeters
-    
-    // treat pre 1.2 phase targeting args as '«phase»:' for backwards compatibility
-    ["unit", "integration", "functional", "other"].each {
-        if (argsMap[it]) {
-            phaseAndTypeTargeters << "${it}${TEST_PHASE_AND_TYPE_SEPARATOR}"
-            argsMap.remove(it) // these are not test "options"
-        }
-    }
-    
-    // process the phaseAndTypeTargeters, populating the targetPhasesAndTypes map from _GrailsTest
-    phaseAndTypeTargeters.each {
-        def parts = it.split(TEST_PHASE_AND_TYPE_SEPARATOR, 2)
-        def targetPhase = parts[0] ?: TEST_PHASE_WILDCARD
-        def targetType = parts[1] ?: TEST_TYPE_WILDCARD
-        
-        if (!targetPhasesAndTypes.containsKey(targetPhase)) targetPhasesAndTypes[targetPhase] = []
-        targetPhasesAndTypes[targetPhase] << targetType
-    }
-    
-    // Any switch style args are "test options" (from _GrailsTest)
-    argsMap.each {
-        if (it.key != 'params') {
-            testOptions[it.key] = it.value
-        }
-    }
+    FileAlterationMonitor monitor = new FileAlterationMonitor(interval);
+    monitor.addObserver(observer);
+    monitor.start();
 
-    if (argsMap["xml"]) {
-        reportFormats = [ "xml" ]
-        createTestReports = false
-    }
-    else {
-        createTestReports = !argsMap["no-reports"]
-    }
-
-    reRunTests = argsMap["rerun"]
-
-	// run tests
-    allTests()
-
-	println '---------------------'
-	println 'Auto Test is running.'
-	println '---------------------'
-
-	Long lastModified = new Date().time
-	Boolean autoRecompile = true
-	Boolean keepRunning = true
-	
-    while (keepRunning) {
-        if (autoRecompile) {
-            lastModified = checkModificationTime(lastModified) {
-                try {
-					cleanTestReports()
-					compile()
-
-                    Thread currentThread = Thread.currentThread()
-                    classLoader = new URLClassLoader([classesDir.toURI().toURL()] as URL[], rootLoader)
-                    currentThread.setContextClassLoader classLoader
-                    PluginManagerHolder.pluginManager = null
-
-                    // reload plugins
-                    loadPlugins()
-
-					// run tests
-                    allTests()
-
-					println '--------------------------------'
-					println 'Tests run. Auto Test is running.'
-					println '--------------------------------'
-                } catch (Throwable e) {
-                    logError("Error running tests", e)
-                    exit(1)
-                }
-            }
-        }
-        sleep(recompileFrequency * 1000)
-	}
 }
+class FileListener extends FileAlterationListenerAdaptor {
+    Set testsToRun = []
 
-setDefaultTarget(main)
+    @Synchronized
+    void onFileChange(File file) {
+        addTestName(file)
+    }
 
-private checkModificationTime(def lastModified, def callback) {
-	def foldersToCheck = [	"${basedir}/grails-app",
-							"${basedir}/test",
-							"${basedir}/src"]
-	
-	def tmp = lastModified
-	foldersToCheck.each { folderName ->
-		def folder = new File(folderName)
-		folder.eachDir { file ->
-			def fileModificationTime = checkFileModificationTime(file, tmp)
+    @Override
+    void onFileCreate(File file) {
+        addTestName(file)
+    }
 
-			if (fileModificationTime > tmp) {
-				tmp = fileModificationTime
-			}
-		}
-	}
-	
-    if(lastModified < tmp) {
-        try {
-            callback()
-        }
-        catch(Exception e) {
-            logError("Error automatically running tests", e)
+    private addTestName(File file) {
+        if (file.name.endsWith('.groovy') || file.name.endsWith('.java')) {
+            String test = file.name.replaceAll(/.groovy|.java/, '').replaceAll(/Tests\z|Test\z|Spec\z/, '')
+            testsToRun << test
         }
     }
-	lastModified = tmp
 
-    return lastModified
-}
+    @Override
+    @Synchronized
+    void onStop(FileAlterationObserver observer) {
+        if (testsToRun) {
+            String command = "test-app ${testsToRun.join(' ')}"
+            GrailsConsole.getInstance().updateStatus("${testsToRun.size()} files modified, running test-app command with: ${command}")
 
-private checkFileModificationTime(def file, def tmp) {
-	def fileModificationTime
-	
-	if (file.isDirectory()) {
-		for (nestedFile in file.listFiles()) {
-			fileModificationTime = checkFileModificationTime(nestedFile, tmp)
-			if (fileModificationTime > tmp) {
-				return fileModificationTime
-			}
-		}
-	}
-	
-	fileModificationTime = file.lastModified()
-	if (fileModificationTime > tmp) {
-		tmp = fileModificationTime
-	}
-	
-	return tmp
+            def parser = GrailsScriptRunner.getCommandLineParser()
+            def commandLine = parser.parseString(command)
+            InteractiveMode.current.scriptRunner.executeScriptWithCaching(commandLine)
+
+            testsToRun = []
+        }
+    }
+
+    @Override
+    void onStart(FileAlterationObserver observer) {
+        testsToRun = []
+    }
+
+
 }
