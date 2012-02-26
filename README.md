@@ -12,11 +12,14 @@ Version 1.0 of this plugin will only work with Grails 2.0 or higher.  If you hav
 ## Usage
 
 ```
-grails
-auto-test
+$ grails
+| Enter a script name to run. Use TAB for completion: 
+grails> auto-test
 ```
 
 The plugin will monitor the project directory and will attempt to run only the subset of tests affected by what changed.  This is very rudimentary - for example, if you modify BookController or BookControllerTests or BookControllerSpec, it will run `test-app BookController`
+
+Example usage screencast: http://youtu.be/7qLuDlJqFwY
 
 Currently, there is no support for running the __entire__ test suite when something is changed (which is the way the plugin behaved in previous versions).  This will be added in a future release.
 
