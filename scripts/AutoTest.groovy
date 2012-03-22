@@ -15,6 +15,7 @@ target(default: "autotest") {
     File baseProjectDirectory = new File(basedir)
     long interval = 2000
     FileListener listener = new FileListener()
+    listener.args = argsMap.params
 
     FileAlterationObserver observer = new FileAlterationObserver(baseProjectDirectory);
     observer.addListener(listener)
@@ -29,6 +30,7 @@ target(default: "autotest") {
 }
 class FileListener extends FileAlterationListenerAdaptor {
     Set testsToRun = []
+    Set args
 
     @Synchronized
     void onFileChange(File file) {
@@ -51,9 +53,9 @@ class FileListener extends FileAlterationListenerAdaptor {
     @Synchronized
     void onStop(FileAlterationObserver observer) {
         if (testsToRun) {
-            String command = "test-app ${testsToRun.join(' ')}"
+            String command = "test-app ${args.join(' ')} ${testsToRun.join(' ')} "
             GrailsConsole.getInstance().updateStatus("${testsToRun.size()} files modified, running test-app command with: ${command}")
-
+println command
             def parser = GrailsScriptRunner.getCommandLineParser()
             def commandLine = parser.parseString(command)
             InteractiveMode.current.scriptRunner.executeScriptWithCaching(commandLine)

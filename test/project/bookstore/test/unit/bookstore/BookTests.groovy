@@ -3,13 +3,12 @@ package bookstore
 import grails.test.mixin.*
 import org.junit.*
 
-/**
- * See the API for {@link grails.test.mixin.domain.DomainClassUnitTestMixin} for usage instructions
- */
 @TestFor(Book)
 class BookTests {
 
-    void testSomething() {
-        println "boo!!!"
+    void testTitleIsRequired() {
+		Book book = new Book()
+		book.save()
+		assert "nullable" == book.errors['title'].code
     }
 }
