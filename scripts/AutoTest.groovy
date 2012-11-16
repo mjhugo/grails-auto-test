@@ -15,7 +15,14 @@ target(default: "autotest") {
     File baseProjectDirectory = new File(basedir)
     long interval = 2000
     FileListener listener = new FileListener()
-    listener.args = argsMap.params
+
+    argsMap.each { key, value ->
+        if (key == "params") {
+            listener.args.addAll(value)
+        } else {
+            listener.args.add("-" + value)
+        }
+    }
 
     FileAlterationObserver observer = new FileAlterationObserver(baseProjectDirectory);
     observer.addListener(listener)
@@ -30,7 +37,7 @@ target(default: "autotest") {
 }
 class FileListener extends FileAlterationListenerAdaptor {
     Set testsToRun = []
-    Set args
+    Set args = []
 
     @Synchronized
     void onFileChange(File file) {

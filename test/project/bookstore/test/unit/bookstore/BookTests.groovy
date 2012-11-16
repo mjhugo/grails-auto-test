@@ -9,6 +9,6 @@ class BookTests {
     void testTitleIsRequired() {
 		Book book = new Book()
 		book.save()
-		assert "nullable" == book.errors['title'].code
+		assert "nullable" == book.errors['title'].code + "1"
     }
 }
