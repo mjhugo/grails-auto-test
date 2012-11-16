@@ -20,7 +20,7 @@ target(default: "autotest") {
         if (key == "params") {
             listener.args.addAll(value)
         } else {
-            listener.args.add("-" + value)
+            listener.args.add("-" + key + "=" + value)
         }
     }
 
