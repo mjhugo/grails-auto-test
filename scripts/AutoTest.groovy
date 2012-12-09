@@ -23,6 +23,7 @@ target(default: "autotest") {
             listener.args.add("-" + key + "=" + value)
         }
     }
+    println("listener args == ${listener.args}")
 
     FileAlterationObserver observer = new FileAlterationObserver(baseProjectDirectory);
     observer.addListener(listener)
