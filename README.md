@@ -5,9 +5,13 @@
 - Björn Wilmsmann, MetaSieve
 - Mike Hugo
 
+## Modifications Made By
+
+- Chris Sterling
+
 ## Grails support
 
-Version 1.0 of this plugin will only work with Grails 2.0 or higher.  If you have a Grails application using a version of grails prior to 2.0, please use version 0.1 of this plugin
+Version 1.0 of this plugin works with Grails 2.0 or higher. If you have a Grails application using a version of grails prior to 2.0, please use version 0.1 of this plugin
 
 ## Usage
 
@@ -21,7 +25,15 @@ The plugin will monitor the project directory and will attempt to run only the s
 
 Example usage screencast: http://youtu.be/7qLuDlJqFwY
 
-Currently, there is no support for running the __entire__ test suite when something is changed (which is the way the plugin behaved in previous versions).  This will be added in a future release.
+In order to run functional tests continually upon changes, the application must be started separately and the "-baseUrl" command line arg must be used to run against already started instance. Here is an example:
+
+```
+$ grails
+| Enter a script name to run. Use TAB for completion: 
+grails> run-app
+| Server running. Browse to http://localhost:8080/app
+grails> auto-test -baseUrl=http://localhost:8080/app/
+```
 
 ## Support
 
