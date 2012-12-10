@@ -1,14 +1,20 @@
 package bookstore
 
 import grails.test.mixin.*
-import org.junit.*
+import spock.lang.Specification
 
 @TestFor(Book)
-class BookTests {
+class BookSpec extends Specification {
 
-    void testTitleIsRequired() {
+    def "save a book"() {
+        given:
 		Book book = new Book()
+
+        when:
 		book.save()
+
+        then:
 		assert "nullable" == book.errors['title'].code
     }
+
 }
