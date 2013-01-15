@@ -25,6 +25,11 @@ The plugin will monitor the project directory and will attempt to run only the s
 
 Example usage screencast: http://youtu.be/7qLuDlJqFwY
 
+The `auto-test` command will also honor any extra test arguments passed to it. For example:
+
+    grails> auto-test unit:
+    grails> auto-test --rerun unit:spock
+
 In order to run functional tests continually upon changes, the application must be started separately and the "-baseUrl" command line arg must be used to run against already started instance. Here is an example:
 
 ```
