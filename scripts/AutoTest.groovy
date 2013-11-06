@@ -10,7 +10,7 @@ includeTargets << grailsScript("_GrailsSettings")
 includeTargets << grailsScript("_GrailsTest")
 includeTargets << grailsScript("_GrailsCompile")
 
-target(default: "autotest") {
+target(autoTest: "Start the auto-test listener") {
 
     File baseProjectDirectory = new File(basedir)
     long interval = 2000
@@ -25,34 +25,34 @@ target(default: "autotest") {
     }
     println("listener args == ${listener.args}")
 
-    FileAlterationObserver observer = new FileAlterationObserver(baseProjectDirectory);
+    FileAlterationObserver observer = new FileAlterationObserver(baseProjectDirectory)
     observer.addListener(listener)
     observer.initialize()
 
     GrailsConsole.getInstance().updateStatus "listening for changes to directory ${baseProjectDirectory}"
 
-    FileAlterationMonitor monitor = new FileAlterationMonitor(interval);
-    monitor.addObserver(observer);
-    monitor.start();
-
+    FileAlterationMonitor monitor = new FileAlterationMonitor(interval)
+    monitor.addObserver(observer)
+    monitor.start()
 }
+
 class FileListener extends FileAlterationListenerAdaptor {
     Set testsToRun = []
     Set args = []
 
     @Synchronized
     void onFileChange(File file) {
-        addTestName(file)
+        addTestName(file.name)
     }
 
     @Override
     void onFileCreate(File file) {
-        addTestName(file)
+        addTestName(file.name)
     }
 
-    private addTestName(File file) {
-        if (file.name.endsWith('.groovy') || file.name.endsWith('.java')) {
-            String test = file.name.replaceAll(/.groovy|.java/, '').replaceAll(/Tests\z|Test\z|Spec\z/, '')
+    private addTestName(String filename) {
+        if (filename.endsWith('.groovy') || filename.endsWith('.java')) {
+            String test = filename.replaceAll(/.groovy|.java/, '').replaceAll(/Tests\z|Test\z|Spec\z/, '')
             testsToRun << test
         }
     }
@@ -76,6 +76,6 @@ println command
     void onStart(FileAlterationObserver observer) {
         testsToRun = []
     }
-
-
 }
+
+setDefaultTarget 'autoTest'
