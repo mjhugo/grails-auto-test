@@ -1,7 +1,7 @@
 AutoTest.iml
 AutoTest.ipr
 AutoTest.iws
-test/project/bookstore/stacktrace.log
+*.log
 test/project/bookstore/target/
 test/project/bookstore/web-app/WEB-INF/tld/c.tld
 test/project/bookstore/web-app/WEB-INF/tld/fmt.tld
